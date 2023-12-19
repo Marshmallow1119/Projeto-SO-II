@@ -143,6 +143,11 @@ static request waitForClientOrChef()
     }
 
     // TODO insert your code here
+
+    //atualizar estado do waiter
+    sh->fSt.st.waiterStat = WAIT_FOR_REQUEST;
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
     
     if (semUp (semgid, sh->mutex) == -1)      {                                             /* exit critical region */
         perror ("error on the down operation for semaphore access (WT)");
@@ -151,6 +156,12 @@ static request waitForClientOrChef()
 
     // TODO insert your code here
 
+    //esperar por pedido do grupo ou do chef
+    if (semDown (semgid, sh->waiterRequest) == -1)  {                                                  
+        perror ("error on the up operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
+    }
+
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
@@ -158,12 +169,31 @@ static request waitForClientOrChef()
 
     // TODO insert your code here
 
+    //Tipo de pedido (pedido de comida ou comida pronta)
+    if (sh->fSt.waiterRequest.reqType == FOODREQ) {
+        req.reqType = FOODREQ;
+        req.reqGroup = sh->fSt.waiterRequest.reqGroup;
+    }
+    else if (sh->fSt.waiterRequest.reqType == FOODREADY) {
+        req.reqType = FOODREADY;
+        req.reqGroup = sh->fSt.waiterRequest.reqGroup;
+    }
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
+    
+
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
         perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
+
+    //pedido recebido pelo waiter
+    if (semUp (semgid, sh->waiterRequestPossible) == -1) {                                                  
+        perror ("error on the up operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
+    }
 
     return req;
 

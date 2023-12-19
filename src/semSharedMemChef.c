@@ -163,8 +163,8 @@ static void waitForOrder ()
 
     //TODO insert your code here
 
-    //ordem recebida pelo chef
-    if (semUp (semgid, sh->orderReceived) == -1) {                                                      /* exit critical region */
+    //pedido recebida pelo chef
+    if (semUp (semgid, sh->orderReceived) == -1) {                                                      
         perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
@@ -214,7 +214,7 @@ static void processOrder ()
     //TODO insert your code here
 
     //comida pronta para ser entregue
-    if (semUp (semgid, sh->waiterRequest) == -1) {                                                      /* exit critical region */
+    if (semUp (semgid, sh->waiterRequest) == -1) {                                                     
         perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
