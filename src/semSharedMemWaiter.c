@@ -171,10 +171,12 @@ static request waitForClientOrChef()
 
     //Tipo de pedido (pedido de comida ou comida pronta)
     if (sh->fSt.waiterRequest.reqType == FOODREQ) {
+        //requicitado pelo grupo
         req.reqType = FOODREQ;
         req.reqGroup = sh->fSt.waiterRequest.reqGroup;
     }
     else if (sh->fSt.waiterRequest.reqType == FOODREADY) {
+        //requicitado pelo chef
         req.reqType = FOODREADY;
         req.reqGroup = sh->fSt.waiterRequest.reqGroup;
     }
@@ -216,15 +218,34 @@ static void informChef (int n)
     }
 
     // TODO insert your code here
+
+    //atualizar estado do waiter
+    sh->fSt.st.waiterStat = INFORM_CHEF;
+    //pedido pronto para ser enviado ao chef
+    sh->fSt.foodOrder = 1;
+    //grupo associado ao pedido
+    sh->fSt.foodGroup = n;
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
     
     if (semUp (semgid, sh->mutex) == -1)                                                   /* exit critical region */
     { perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
-
     
     // TODO insert your code here
 
+    //waiter espera que o chef receba o pedido
+    if (semUp (semgid, sh->waitOrder) == -1) {                                                  
+        perror ("error on the up operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
+    }
+
+    //avisar grupo que o pedido foi recebido
+    if (semUp (semgid, sh->requestReceived[n]) == -1) {                                                  
+        perror ("error on the up operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
+    }
 }
 
 /**
