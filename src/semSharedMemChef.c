@@ -128,16 +128,16 @@ static void waitForOrder ()
 
     //TODO insert your code here
 
+    //esperar por pedido do waiter
+    if (semDown (semgid, sh->waitOrder) == -1) {                                                     
+        perror ("error on the up operation for semaphore access (PT)");
+        exit (EXIT_FAILURE);
+    }
+
     //atualizar estado do chefe
     sh->fSt.st.chefStat = WAIT_FOR_ORDER;
     //guardar estado interno
     saveState(nFic, &sh->fSt);
-
-    //esperar por pedido do waiter
-    if (semDown (semgid, sh->waitOrder) == -1) {                                                      /* enter critical region */
-        perror ("error on the up operation for semaphore access (PT)");
-        exit (EXIT_FAILURE);
-    }
      
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
         perror ("error on the up operation for semaphore access (PT)");
