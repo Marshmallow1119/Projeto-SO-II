@@ -190,12 +190,29 @@ static void checkInAtReception(int id)
 {
     // TODO insert your code here
 
+    //avisar recepcionist que chegou
+    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
+        perror ("error on the down operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
+
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
+
+    //atualizar estado do grupo
+    sh->fSt.st.groupStat[id] = ATRECEPTION;
+    //atualizar numero de grupos a espera de mesa
+    sh->fSt.groupsWaiting++;
+    //guardar pedido de mesa do grupo
+    sh->fSt.receptionistRequest.reqType = TABLEREQ;
+    //guardar grupo que fez o pedido
+    sh->fSt.receptionistRequest.reqGroup = id;
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (CT)");
@@ -204,6 +221,11 @@ static void checkInAtReception(int id)
 
     // TODO insert your code here
 
+    //esperar por mesa
+    if (semDown (semgid, sh->waitForTable[id]) == -1) {
+        perror ("error on the down operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
 }
 
 /**

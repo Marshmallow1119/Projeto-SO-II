@@ -283,8 +283,11 @@ static void provideTableOrWaitingRoom (int n)
         //guardar estado interno
         saveState(nFic, &sh->fSt);
 
-        //avisar grupo que pode prosseguir
-        //adicionar semaforo correto
+        //avisar grupo que já pode ir para a mesa
+        if (semUp (semgid, sh->waitForTable[n]) == -1) {
+            perror ("error on the up operation for semaphore access");
+            exit (EXIT_FAILURE);
+        }
     }
     
     if (semUp (semgid, sh->mutex) == -1) {                                               /* exit critical region */
