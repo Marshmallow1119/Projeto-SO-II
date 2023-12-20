@@ -225,7 +225,6 @@ static request waitForGroup()
     //receptionist lê o pedido do grupo
     ret = sh->fSt.receptionistRequest;
 
-
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
