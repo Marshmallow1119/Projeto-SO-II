@@ -149,9 +149,22 @@ int main (int argc, char *argv[])
  */
 static int decideTableOrWait(int n)
 {
-     //TODO insert your code here
+    //TODO insert your code here
 
-     return -1;
+    //número de mesas ocupadas
+    int countTables = 0;
+    //verificar quantas mesas estão ocupadas
+    for (int i = 0; i < sh->fSt.nGroups; i++) {
+        if (groupRecord[i] == ATTABLE) {
+            countTables++;
+        }
+    }
+    //verificar se há mesas livres
+    if (countTables < NUMTABLES) {
+        return n;
+    }
+    //no caso de não haver mesas livres
+    return -1;
 }
 
 /**
@@ -164,9 +177,16 @@ static int decideTableOrWait(int n)
  */
 static int decideNextGroup()
 {
-     //TODO insert your code here
+    //TODO insert your code here
 
-     return -1;
+    //verificar qual é o próximo grupo à espera de mesa
+    for (int i = 0; i < sh->fSt.nGroups; i++) {
+        if (groupRecord[i] == WAIT) {
+            return i;
+        }
+    }
+    //no caso de não haver grupos à espera de mesa
+    return -1;
 }
 
 /**
@@ -188,6 +208,12 @@ static request waitForGroup()
     }
 
     // TODO insert your code here
+
+    //receptionist espera pelo grupo 
+    if (semDown (semgid, sh->receptionistReq) == -1)  {                                                 
+        perror ("error on the up operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
     
     if (semUp (semgid, sh->mutex) == -1)      {                                             /* exit critical region */
         perror ("error on the down operation for semaphore access (WT)");
@@ -196,6 +222,10 @@ static request waitForGroup()
 
     // TODO insert your code here
 
+    //receptionist lê o pedido do grupo
+    ret = sh->fSt.receptionistRequest;
+
+
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
@@ -203,12 +233,24 @@ static request waitForGroup()
 
     // TODO insert your code here
 
+    //fim do pedido do grupo
+    if (semUp (semgid, sh->receptionistReq) == -1)  {                                                 
+        perror ("error on the up operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
+
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
      perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
+
+    //receptionist avisa que está disponível para receber pedidos
+    if (semUp (semgid, sh->receptionistRequestPossible) == -1)  {                                                 
+        perror ("error on the up operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
 
     return ret;
 
@@ -232,6 +274,20 @@ static void provideTableOrWaitingRoom (int n)
 
     // TODO insert your code here
 
+    //verificar se há mesas livres
+    int table = decideTableOrWait(n);
+    if (table != -1) {
+        //atualizar estado do receptionist
+        sh->fSt.st.receptionistStat = ASSIGNTABLE;
+        //guardar que o grupo n está à mesa
+        groupRecord[n] = ATTABLE;
+        //guardar estado interno
+        saveState(nFic, &sh->fSt);
+
+        //avisar grupo que pode prosseguir
+        //adicionar semaforo correto
+    }
+    
     if (semUp (semgid, sh->mutex) == -1) {                                               /* exit critical region */
         perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
@@ -258,11 +314,39 @@ static void receivePayment (int n)
 
     // TODO insert your code here
 
+    //guardar que o grupo n já acabou de comer
+    groupRecord[n] = DONE;
+    //atualizar estado do receptionist
+    sh->fSt.st.receptionistStat = RECVPAY;
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
+
     if (semUp (semgid, sh->mutex) == -1)  {                                                  /* exit critical region */
      perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
+
+    //pagamento receido
+    if (semUp (semgid, sh->tableDone[n]) == -1)  {                                                 
+     perror ("error on the up operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
+
+    //verificar se há grupos à espera de mesa
+    int nextGroup = decideNextGroup();
+    if (nextGroup != -1) {
+        //ver qual é a mesa que está livre
+        int table = decideTableOrWait(nextGroup);
+        if (table != -1) {
+            //avisar grupo seguinte que a mesa está pronta
+            if (semUp (semgid, sh->waitForTable[table]) == -1)  {                                                 
+                perror ("error on the up operation for semaphore access");
+                exit (EXIT_FAILURE);
+            }
+            
+        }
+    }
 }
 
