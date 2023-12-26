@@ -151,17 +151,24 @@ static int decideTableOrWait(int n)
 {
     //TODO insert your code here
 
-    //número de mesas ocupadas
-    int countTables = 0;
-    //verificar quantas mesas estão ocupadas
+    //array para verificar que mesas estão ocupadas 
+    int* countTables = (int*) calloc(NUMTABLES, sizeof(int));
+
+    //verificar quais as mesas ocupadas
     for (int i = 0; i < sh->fSt.nGroups; i++) {
-        if (groupRecord[i] == ATTABLE) {
-            countTables++;
+        for (int mesa = 0; mesa < NUMTABLES; mesa++) {
+            if (sh->fSt.assignedTable[i] == mesa && groupRecord[i] == ATTABLE) {
+                countTables[mesa] = 1;
+                break;
+            }
         }
     }
-    //verificar se há mesas livres
-    if (countTables < NUMTABLES) {
-        return n;
+
+    //verificar qual a mesa livre
+    for (int i = 0; i < NUMTABLES; i++) {
+        if (countTables[i] == 0) {
+            return i;
+        }
     }
     //no caso de não haver mesas livres
     return -1;
@@ -209,6 +216,11 @@ static request waitForGroup()
 
     // TODO insert your code here
 
+    //atualizar estado do receptionist
+    sh->fSt.st.receptionistStat = WAIT_FOR_REQUEST;
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
+
     //receptionist espera pelo grupo 
     if (semDown (semgid, sh->receptionistReq) == -1)  {                                                 
         perror ("error on the up operation for semaphore access");
@@ -231,6 +243,11 @@ static request waitForGroup()
     }
 
     // TODO insert your code here
+
+    //atualizar estado do receptionist
+    sh->fSt.st.receptionistStat = WAIT_FOR_REQUEST;
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
 
     //fim do pedido do grupo
     if (semUp (semgid, sh->receptionistReq) == -1)  {                                                 
@@ -278,6 +295,8 @@ static void provideTableOrWaitingRoom (int n)
     if (table != -1) {
         //atualizar estado do receptionist
         sh->fSt.st.receptionistStat = ASSIGNTABLE;
+        //atribuir mesa ao grupo n
+        sh->fSt.assignedTable[n] = table;
         //guardar que o grupo n está à mesa
         groupRecord[n] = ATTABLE;
         //guardar estado interno
