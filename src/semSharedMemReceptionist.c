@@ -170,6 +170,8 @@ static int decideTableOrWait(int n)
             return i;
         }
     }
+    //libertar memória
+    free(countTables);
     //no caso de não haver mesas livres
     return -1;
 }
