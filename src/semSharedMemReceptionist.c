@@ -288,11 +288,14 @@ static void provideTableOrWaitingRoom (int n)
 
     // TODO insert your code here
 
+    //atualizar estado do receptionist
+    sh->fSt.st.receptionistStat = ASSIGNTABLE;
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
+
     //verificar se há mesas livres
     int table = decideTableOrWait(n);
     if (table != -1) {
-        //atualizar estado do receptionist
-        sh->fSt.st.receptionistStat = ASSIGNTABLE;
         //atribuir mesa ao grupo n
         sh->fSt.assignedTable[n] = table;
         //guardar que o grupo n está à mesa
