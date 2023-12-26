@@ -190,11 +190,6 @@ static void checkInAtReception(int id)
 {
     // TODO insert your code here
 
-    //criar pedido
-    request req;
-    req.reqGroup = id;
-    req.reqType = TABLEREQ;
-
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
@@ -221,7 +216,8 @@ static void checkInAtReception(int id)
     }
 
     //guardar pedido de mesa
-    sh->fSt.receptionistRequest = req;
+    sh->fSt.receptionistRequest.reqGroup = id;
+    sh->fSt.receptionistRequest.reqType = TABLEREQ;
 
     if (semUp (semgid, sh->receptionistReq) == -1) {                                                     
         perror ("error on the up operation for semaphore access");

@@ -195,11 +195,6 @@ static void processOrder ()
 
     //TODO insert your code here
 
-    //criar pedido
-    request ret;
-    ret.reqType = FOODREADY;
-    ret.reqGroup = lastGroup;
-
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
         perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
@@ -226,7 +221,8 @@ static void processOrder ()
     }
 
     //enviar pedido para o waiter
-    sh->fSt.waiterRequest = ret;
+    sh->fSt.waiterRequest.reqGroup = lastGroup;
+    sh->fSt.waiterRequest.reqType = FOODREADY;
 
     //comida pronta para ser entregue
     if (semUp (semgid, sh->waiterRequest) == -1) {                                                     
