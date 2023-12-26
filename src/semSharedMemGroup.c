@@ -347,12 +347,23 @@ static void checkOutAtReception (int id)
 {
     // TODO insert your code here
 
+    //avisar recepcionist que querem pagar
+    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
+        perror ("error on the down operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
+
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
+
+    //atualizar estado do grupo
+    sh->fSt.st.groupStat[id] = CHECKOUT;
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
@@ -361,12 +372,23 @@ static void checkOutAtReception (int id)
 
     // TODO insert your code here
 
+    //esperar que o recepcionist receba o pagamento
+    if (semDown (semgid, sh->tableDone[sh->fSt.assignedTable[id]]) == -1) {                                                  
+        perror ("error on the down operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
+
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
+
+    //atualizar estado do grupo
+    sh->fSt.st.groupStat[id] = LEAVING;
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
