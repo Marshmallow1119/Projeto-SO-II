@@ -247,8 +247,6 @@ static request waitForGroup()
 
     //atualizar estado do receptionist
     sh->fSt.st.receptionistStat = WAIT_FOR_REQUEST;
-    //guardar estado interno
-    saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
      perror ("error on the down operation for semaphore access (WT)");
@@ -257,11 +255,6 @@ static request waitForGroup()
 
     // TODO insert your code here
 
-    //fim do pedido do grupo
-    if (semUp (semgid, sh->receptionistReq) == -1)  {                                                 
-        perror ("error on the up operation for semaphore access");
-        exit (EXIT_FAILURE);
-    }
     //receptionist avisa que está disponível para receber pedidos
     if (semUp (semgid, sh->receptionistRequestPossible) == -1)  {                                                 
         perror ("error on the up operation for semaphore access");
