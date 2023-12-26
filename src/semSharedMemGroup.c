@@ -195,12 +195,6 @@ static void checkInAtReception(int id)
     req.reqGroup = id;
     req.reqType = TABLEREQ;
 
-    //avisar recepcionist que chegou
-    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
-        perror ("error on the down operation for semaphore access");
-        exit (EXIT_FAILURE);
-    }
-
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
@@ -219,6 +213,12 @@ static void checkInAtReception(int id)
     }
 
     // TODO insert your code here
+
+    //avisar recepcionist que chegou
+    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
+        perror ("error on the down operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
 
     //guardar pedido de mesa
     sh->fSt.receptionistRequest = req;
@@ -248,12 +248,6 @@ static void orderFood (int id)
 {
     // TODO insert your code here
 
-    //esperar que o waiter esteja disponivel
-    if (semDown (semgid, sh->waiterRequestPossible) == -1) {                                                     
-        perror ("error on the up operation for semaphore access");
-        exit (EXIT_FAILURE);
-    }
-
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
@@ -272,6 +266,12 @@ static void orderFood (int id)
     }
 
     // TODO insert your code here
+
+    //esperar que o waiter esteja disponivel
+    if (semDown (semgid, sh->waiterRequestPossible) == -1) {                                                     
+        perror ("error on the up operation for semaphore access");
+        exit (EXIT_FAILURE);
+    } 
 
     //guardar pedido de comida do grupo
     sh->fSt.waiterRequest.reqType = FOODREQ;
@@ -385,9 +385,9 @@ static void checkOutAtReception (int id)
     // TODO insert your code here
 
     //guardar pedido de comida do grupo
-    sh->fSt.waiterRequest.reqType = FOODREQ;
+    sh->fSt.receptionistRequest.reqType = BILLREQ;
     //guardar grupo que fez o pedido
-    sh->fSt.waiterRequest.reqGroup = id;
+    sh->fSt.receptionistRequest.reqGroup = id;
 
     //pedido realizado
     if (semUp (semgid, sh->receptionistReq) == -1) {                                                     

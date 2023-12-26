@@ -155,7 +155,7 @@ static int decideTableOrWait(int n)
     int* countTables = (int*) calloc(NUMTABLES, sizeof(int));
 
     //verificar quais as mesas ocupadas
-    for (int i = 0; i < sh->fSt.nGroups; i++) {
+    for (int i = 0; i < MAXGROUPS; i++) {
         for (int mesa = 0; mesa < NUMTABLES; mesa++) {
             if (sh->fSt.assignedTable[i] == mesa && groupRecord[i] == ATTABLE) {
                 countTables[mesa] = 1;
@@ -235,8 +235,6 @@ static request waitForGroup()
         perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
-    //receptionist lê o pedido do grupo
-    ret = sh->fSt.receptionistRequest;
 
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
         perror ("error on the up operation for semaphore access (WT)");
@@ -245,8 +243,8 @@ static request waitForGroup()
 
     // TODO insert your code here
 
-    //atualizar estado do receptionist
-    sh->fSt.st.receptionistStat = WAIT_FOR_REQUEST;
+    //receptionist lê o pedido do grupo
+    ret = sh->fSt.receptionistRequest;
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
      perror ("error on the down operation for semaphore access (WT)");
@@ -301,8 +299,6 @@ static void provideTableOrWaitingRoom (int n)
         groupRecord[n] = ATTABLE;
         //diminuir o numero de grupos à espera de mesa
         sh->fSt.groupsWaiting--;
-        //guardar estado interno
-        saveState(nFic, &sh->fSt);
         if (semUp (semgid, sh->waitForTable[n]) == -1) {                                               /* exit critical region */
             perror ("error on the down operation for semaphore access (WT)");
             exit (EXIT_FAILURE);
