@@ -186,7 +186,7 @@ static void processOrder ()
 
     //esperar que o waiter esteja disponivel
     if (semDown (semgid, sh->waiterRequestPossible) == -1) {                                                     
-        perror ("error on the up operation for semaphore access (PT)");
+        perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
 
