@@ -224,6 +224,12 @@ static void informChef (int n)
     //grupo associado ao pedido
     sh->fSt.foodGroup = n;
 
+    //avisar o grupo que o pedido foi recebido
+    if (semUp (semgid, sh->requestReceived[sh->fSt.assignedTable[n]]) == -1)                                                   /* exit critical region */
+    { perror ("error on the down operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
+    }  
+
     if (semUp (semgid, sh->waitOrder) == -1) {                                                  
         perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
