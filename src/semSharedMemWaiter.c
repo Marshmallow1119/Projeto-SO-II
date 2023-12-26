@@ -158,7 +158,7 @@ static request waitForClientOrChef()
 
     //esperar por pedido do grupo ou do chef
     if (semDown (semgid, sh->waiterRequest) == -1)  {                                                  
-        perror ("error on the up operation for semaphore access (WT)");
+        perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
 
@@ -169,7 +169,7 @@ static request waitForClientOrChef()
 
     // TODO insert your code here
 
-    //Tipo de pedido (pedido de comida ou comida pronta)
+    //Tipo de pedido (pedido de comida pelo grupo ou comida pronta pelo chef)
     if (sh->fSt.waiterRequest.reqType == FOODREQ) {
         //requicitado pelo grupo
         req.reqType = FOODREQ;
@@ -191,9 +191,9 @@ static request waitForClientOrChef()
 
     // TODO insert your code here
 
-    //pedido recebido pelo waiter
+    //waiter disponivel para receber novos pedidos
     if (semUp (semgid, sh->waiterRequestPossible) == -1) {                                                  
-        perror ("error on the up operation for semaphore access (WT)");
+        perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
 
@@ -237,13 +237,13 @@ static void informChef (int n)
 
     //waiter espera que o chef receba o pedido
     if (semDown (semgid, sh->orderReceived) == -1) {                                                  
-        perror ("error on the down operation for semaphore access (WT)");
+        perror ("error on the down operation for semaphore access");
         exit (EXIT_FAILURE);
     }
 
     //avisar grupo que o pedido foi recebido
     if (semUp (semgid, sh->requestReceived[n]) == -1) {                                                  
-        perror ("error on the up operation for semaphore access (WT)");
+        perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
 }
@@ -257,7 +257,7 @@ static void informChef (int n)
  *
  */
 
-static void takeFoodToTable (int n)
+static void takeFoodToTable(int n)
 {
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
         perror ("error on the up operation for semaphore access (WT)");
@@ -273,7 +273,7 @@ static void takeFoodToTable (int n)
 
     //informar o grupo que a comida esta pronta
     if (semUp (semgid, sh->foodArrived[n]) == -1) {                                                  
-        perror ("error on the up operation for semaphore access (WT)");
+        perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
     
