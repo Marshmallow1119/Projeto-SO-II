@@ -155,7 +155,7 @@ static int decideTableOrWait(int n)
     int* countTables = (int*) calloc(NUMTABLES, sizeof(int));
 
     //verificar quais as mesas ocupadas
-    for (int i = 0; i < sh->fSt.nGroups; i++) {
+    for (int i = 0; i < MAXGROUPS; i++) {
         for (int mesa = 0; mesa < NUMTABLES; mesa++) {
             if (sh->fSt.assignedTable[i] == mesa && groupRecord[i] == ATTABLE) {
                 countTables[mesa] = 1;
@@ -170,6 +170,8 @@ static int decideTableOrWait(int n)
             return i;
         }
     }
+    //libertar memória
+    free(countTables);
     //no caso de não haver mesas livres
     return -1;
 }
@@ -187,7 +189,7 @@ static int decideNextGroup()
     //TODO insert your code here
 
     //verificar qual é o próximo grupo à espera de mesa
-    for (int i = 0; i < sh->fSt.nGroups; i++) {
+    for (int i = 0; i < MAXGROUPS; i++) {
         if (groupRecord[i] == WAIT) {
             return i;
         }
@@ -233,8 +235,6 @@ static request waitForGroup()
         perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
-    //receptionist lê o pedido do grupo
-    ret = sh->fSt.receptionistRequest;
 
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
         perror ("error on the up operation for semaphore access (WT)");
@@ -243,10 +243,8 @@ static request waitForGroup()
 
     // TODO insert your code here
 
-    //atualizar estado do receptionist
-    sh->fSt.st.receptionistStat = WAIT_FOR_REQUEST;
-    //guardar estado interno
-    saveState(nFic, &sh->fSt);
+    //receptionist lê o pedido do grupo
+    ret = sh->fSt.receptionistRequest;
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
      perror ("error on the down operation for semaphore access (WT)");
@@ -255,11 +253,6 @@ static request waitForGroup()
 
     // TODO insert your code here
 
-    //fim do pedido do grupo
-    if (semUp (semgid, sh->receptionistReq) == -1)  {                                                 
-        perror ("error on the up operation for semaphore access");
-        exit (EXIT_FAILURE);
-    }
     //receptionist avisa que está disponível para receber pedidos
     if (semUp (semgid, sh->receptionistRequestPossible) == -1)  {                                                 
         perror ("error on the up operation for semaphore access");
@@ -288,20 +281,32 @@ static void provideTableOrWaitingRoom (int n)
 
     // TODO insert your code here
 
+    //atualizar estado do receptionist
+    sh->fSt.st.receptionistStat = ASSIGNTABLE;
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
+    //aumentar o numero de grupos à espera de mesa
+    sh->fSt.groupsWaiting++;
+    //guardar que o grupo n está à espera de mesa
+    groupRecord[n] = WAIT;
+
     //verificar se há mesas livres
     int table = decideTableOrWait(n);
     if (table != -1) {
-        //atualizar estado do receptionist
-        sh->fSt.st.receptionistStat = ASSIGNTABLE;
         //atribuir mesa ao grupo n
         sh->fSt.assignedTable[n] = table;
         //guardar que o grupo n está à mesa
         groupRecord[n] = ATTABLE;
         //diminuir o numero de grupos à espera de mesa
         sh->fSt.groupsWaiting--;
-        //guardar estado interno
-        saveState(nFic, &sh->fSt);
+        if (semUp (semgid, sh->waitForTable[n]) == -1) {                                               /* exit critical region */
+            perror ("error on the down operation for semaphore access (WT)");
+            exit (EXIT_FAILURE);
+        }
     }
+    //guardar estado interno
+    saveState(nFic, &sh->fSt);
+
     
     if (semUp (semgid, sh->mutex) == -1) {                                               /* exit critical region */
         perror ("error on the down operation for semaphore access (WT)");
@@ -329,10 +334,6 @@ static void receivePayment (int n)
 
     // TODO insert your code here
 
-    //guardar que o grupo n já acabou de comer
-    groupRecord[n] = DONE;
-    //libertar mesa
-    sh->fSt.assignedTable[n] = -1;
     //atualizar estado do receptionist
     sh->fSt.st.receptionistStat = RECVPAY;
     //guardar estado interno
@@ -346,21 +347,25 @@ static void receivePayment (int n)
     // TODO insert your code here
 
     //pagamento receido
-    if (semUp (semgid, sh->tableDone[n]) == -1)  {                                                 
+    if (semUp (semgid, sh->tableDone[sh->fSt.assignedTable[n]]) == -1)  {                                                 
      perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
     }
+    //guardar que o grupo n já acabou de comer
+    groupRecord[n] = DONE;
+    //libertar mesa
+    sh->fSt.assignedTable[n] = -1;
 
     //verificar se há grupos à espera de mesa
     if (sh->fSt.groupsWaiting > 0) {
         int nextGroup = decideNextGroup();
-        //ver qual é a mesa que está livre
-        int table = decideTableOrWait(nextGroup);
-        if (table != -1) {
-            //avisar grupo seguinte que a mesa está pronta
-            if (semUp (semgid, sh->waitForTable[nextGroup]) == -1)  {                                                 
-                perror ("error on the up operation for semaphore access");
-                exit (EXIT_FAILURE);
+        if (nextGroup != -1) {
+            //atribuir mesa ao grupo próximo grupo à espera de mesa
+            provideTableOrWaitingRoom(nextGroup);
+            //verificar se foi atribuida mesa ao grupo
+            if (groupRecord[nextGroup] == ATTABLE) {
+                //diminuir o numero de grupos à espera de mesa
+                sh->fSt.groupsWaiting--;
             }
             
         }
