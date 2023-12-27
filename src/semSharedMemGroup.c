@@ -102,7 +102,7 @@ int main (int argc, char *argv[])
     }
 
     /* initialize random generator */
-    srandom ((unsigned int) getpid ());                                                 
+    srand ((unsigned int) getpid ());                                                 
 
 
     /* simulation of the life cycle of the group */
@@ -135,7 +135,7 @@ static double normalRand(double stddev)
 
    double r=0.0;
    for (i=0;i<12;i++) {
-       r += random()/(RAND_MAX+1.0);
+       r += rand()/(RAND_MAX+1.0);
    }
    r -= 6.0;
 
