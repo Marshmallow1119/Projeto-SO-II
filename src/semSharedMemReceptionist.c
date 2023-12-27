@@ -301,6 +301,7 @@ static void provideTableOrWaitingRoom (int n)
         groupRecord[n] = ATTABLE;
         //diminuir o numero de grupos à espera de mesa
         sh->fSt.groupsWaiting--;
+        //avisar o grupo n que pode ir para a mesa
         if (semUp (semgid, sh->waitForTable[n]) == -1) {                                               /* exit critical region */
             perror ("error on the down operation for semaphore access (WT)");
             exit (EXIT_FAILURE);
