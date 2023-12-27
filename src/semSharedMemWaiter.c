@@ -229,7 +229,7 @@ static void informChef (int n)
     { perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }  
-
+    //informar o chef sobre o novo pedido
     if (semUp (semgid, sh->waitOrder) == -1) {                                                  
         perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
