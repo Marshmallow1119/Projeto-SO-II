@@ -102,7 +102,7 @@ int main (int argc, char *argv[])
     }
 
     /* initialize random generator */
-    srandom ((unsigned int) getpid ());                                                 
+    srand ((unsigned int) getpid ());                                                 
 
 
     /* simulation of the life cycle of the group */
@@ -135,7 +135,7 @@ static double normalRand(double stddev)
 
    double r=0.0;
    for (i=0;i<12;i++) {
-       r += random()/(RAND_MAX+1.0);
+       r += rand()/(RAND_MAX+1.0);
    }
    r -= 6.0;
 
@@ -190,12 +190,6 @@ static void checkInAtReception(int id)
 {
     // TODO insert your code here
 
-    //avisar recepcionist que chegou
-    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
-        perror ("error on the down operation for semaphore access");
-        exit (EXIT_FAILURE);
-    }
-
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
@@ -205,12 +199,6 @@ static void checkInAtReception(int id)
 
     //atualizar estado do grupo
     sh->fSt.st.groupStat[id] = ATRECEPTION;
-    //atualizar numero de grupos a espera de mesa
-    sh->fSt.groupsWaiting++;
-    //guardar pedido de mesa do grupo
-    sh->fSt.receptionistRequest.reqType = TABLEREQ;
-    //guardar grupo que fez o pedido
-    sh->fSt.receptionistRequest.reqGroup = id;
     //guardar estado interno
     saveState(nFic, &sh->fSt);
 
@@ -221,6 +209,20 @@ static void checkInAtReception(int id)
 
     // TODO insert your code here
 
+    //avisar recepcionist que chegou
+    if (semDown (semgid, sh->receptionistRequestPossible) == -1) {
+        perror ("error on the down operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
+
+    //guardar pedido de mesa
+    sh->fSt.receptionistRequest.reqGroup = id;
+    sh->fSt.receptionistRequest.reqType = TABLEREQ;
+
+    if (semUp (semgid, sh->receptionistReq) == -1) {                                                     
+        perror ("error on the up operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
     //esperar por mesa
     if (semDown (semgid, sh->waitForTable[id]) == -1) {
         perror ("error on the down operation for semaphore access");
@@ -242,12 +244,6 @@ static void orderFood (int id)
 {
     // TODO insert your code here
 
-    //esperar que o waiter esteja disponivel
-    if (semDown (semgid, sh->waiterRequestPossible) == -1) {                                                     
-        perror ("error on the up operation for semaphore access");
-        exit (EXIT_FAILURE);
-    }
-
     if (semDown (semgid, sh->mutex) == -1) {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
@@ -257,10 +253,6 @@ static void orderFood (int id)
 
     //atualizar estado do grupo
     sh->fSt.st.groupStat[id] = FOOD_REQUEST;
-    //guardar pedido de comida do grupo
-    sh->fSt.waiterRequest.reqType = FOODREQ;
-    //guardar grupo que fez o pedido
-    sh->fSt.waiterRequest.reqGroup = id;
     //guardar estado interno
     saveState(nFic, &sh->fSt);
 
@@ -271,6 +263,22 @@ static void orderFood (int id)
 
     // TODO insert your code here
 
+    //esperar que o waiter esteja disponivel
+    if (semDown (semgid, sh->waiterRequestPossible) == -1) {                                                     
+        perror ("error on the up operation for semaphore access");
+        exit (EXIT_FAILURE);
+    } 
+
+    //guardar pedido de comida do grupo
+    sh->fSt.waiterRequest.reqType = FOODREQ;
+    //guardar grupo que fez o pedido
+    sh->fSt.waiterRequest.reqGroup = id;
+
+    //pedido realizado
+    if (semUp (semgid, sh->waiterRequest) == -1) {                                                     
+        perror ("error on the up operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
     //esperar que o waiter receba o pedido
     if (semDown (semgid, sh->requestReceived[sh->fSt.assignedTable[id]]) == -1) {                                                  
         perror ("error on the up operation for semaphore access");
@@ -372,6 +380,16 @@ static void checkOutAtReception (int id)
 
     // TODO insert your code here
 
+    //guardar pedido de comida do grupo
+    sh->fSt.receptionistRequest.reqType = BILLREQ;
+    //guardar grupo que fez o pedido
+    sh->fSt.receptionistRequest.reqGroup = id;
+
+    //pedido realizado
+    if (semUp (semgid, sh->receptionistReq) == -1) {                                                     
+        perror ("error on the up operation for semaphore access");
+        exit (EXIT_FAILURE);
+    }
     //esperar que o recepcionist receba o pagamento
     if (semDown (semgid, sh->tableDone[sh->fSt.assignedTable[id]]) == -1) {                                                  
         perror ("error on the down operation for semaphore access");
