@@ -167,6 +167,8 @@ static int decideTableOrWait(int n)
     //verificar qual a mesa livre
     for (int i = 0; i < NUMTABLES; i++) {
         if (countTables[i] == 0) {
+            //libertar memória
+            free(countTables);
             return i;
         }
     }
