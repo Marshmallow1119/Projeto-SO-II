@@ -197,7 +197,7 @@ static void checkInAtReception(int id)
 
     // TODO insert your code here
 
-    //atualizar estado do grupo
+    //atualizar estado do grupos
     sh->fSt.st.groupStat[id] = ATRECEPTION;
     //guardar estado interno
     saveState(nFic, &sh->fSt);
@@ -219,6 +219,7 @@ static void checkInAtReception(int id)
     sh->fSt.receptionistRequest.reqGroup = id;
     sh->fSt.receptionistRequest.reqType = TABLEREQ;
 
+    //pedido realizado
     if (semUp (semgid, sh->receptionistReq) == -1) {                                                     
         perror ("error on the up operation for semaphore access");
         exit (EXIT_FAILURE);
